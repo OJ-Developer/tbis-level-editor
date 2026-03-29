@@ -1,0 +1,16 @@
+{
+  "name": "tbis-level-editor",
+  "tree": {
+    "$className": "DataModel",
+
+    "ServerStorage": {
+      "TUNNELER But it sucks Level Editor": {
+        "$path": "src",
+
+        "Packages": {
+          "$path": "Packages"
+        }
+      }
+    }
+  }
+}
