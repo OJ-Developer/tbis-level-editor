@@ -1,12 +1,44 @@
 local LevelManager = require(script.LevelManager)
-
+local Utils = require(script.Parent.Utils)
 
 -- PLUGIN SETUP
 
 local toolbar = plugin:CreateToolbar("TBIS Level Editor")
-local insertObjectsButton = toolbar:CreateButton("Insert Objects", "Open the \"Insert Objects\" menu", "rbxassetid://0")
-local propertiesButton = toolbar:CreateButton("Properties", "Open the \"Properties\" menu", "rbxassetid://0")
-local levelManagerButton = toolbar:CreateButton("Level Manager", "Open the \"Level Manager\" menu", "rbxassetid://0")
+local insertObjectsButton = toolbar:CreateButton("Insert Objects", "Open the \"Insert Objects\" menu", "")
+local propertiesButton = toolbar:CreateButton("Properties", "Open the \"Properties\" menu", "")
+local levelManagerButton = toolbar:CreateButton("Level Manager", "Open the \"Level Manager\" menu", "")
+
+-- UI THEME SETUP
+
+for _, v in Utils.merge(script.Parent.Gui:GetDescendants(), script.Parent.GuiTemplates:GetDescendants()) do
+    if v:IsA("GuiObject") then
+        if not v:GetAttribute("Colour") then continue end
+
+        local colourName = v:GetAttribute("Colour")
+        if not colourName then continue end
+        local colour = Enum.StudioStyleGuideColor:FromName(colourName)
+
+        local modifierName = v:GetAttribute("Colour")
+        local modifier
+        if modifierName and Enum.StudioStyleGuideModifier:FromName(modifierName) then 
+            modifier = Enum.StudioStyleGuideModifier:FromName(modifierName)
+        end
+        
+        v.BackgroundColor3 = settings().Studio.Theme:GetColor(colour, modifier)
+        
+        local borderColourName = v:GetAttribute("BorderColour")
+        if borderColourName and Enum.StudioStyleGuideColor:FromName(borderColourName) then
+            local colourEnum = Enum.StudioStyleGuideColor:FromName(borderColourName)
+            v.BorderColor3 = settings().Studio.Theme:GetColor(colourEnum)
+        end
+        
+        if Utils.HasProperty(v, "TextColor3") then
+            v.TextColor3 = settings().Studio.Theme:GetColor(Enum.StudioStyleGuideColor.MainText)
+        end
+    end
+end
+
+-- WIDGET SETUP
 
 local DEFAULT_WIDGET_WIDTH = 400
 local DEFAULT_WIDGET_HEIGHT = 600

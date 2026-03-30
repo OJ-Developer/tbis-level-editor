@@ -4,7 +4,7 @@ local LevelManager = {}
 
 local levelsFolder
 local gui: typeof(script.Parent.Parent.Gui.LevelManager)
-local templateLevelOption = script.Parent.Parent.GuiTemplates.TemplateLevelOption
+local templateLevelOption: typeof(gui.TemplateLevelOption)
 local selectedLevel: Folder?
 
 function LevelManager.Init(levelManagerGui)
@@ -18,6 +18,7 @@ function LevelManager.Init(levelManagerGui)
 
     -- assigning variables
     gui = levelManagerGui
+    templateLevelOption = gui.TemplateLevelOption
 
     -- options functionality
     gui.Options.NewLevel.MouseButton1Down:Connect(onNewLevelClicked)
