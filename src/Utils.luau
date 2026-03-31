@@ -148,7 +148,7 @@ end
 
 -- TABLE UTILS
 
-function Utils.merge(...: {any})
+function Utils.merge<a>(...: {a}): {a}
 	local newTable = {}
 	for _, t in {...} do
 		for _, v in t do

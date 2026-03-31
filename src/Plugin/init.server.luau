@@ -1,5 +1,6 @@
 local LevelManager = require(script.LevelManager)
-local Utils = require(script.Parent.Utils)
+local PromptPopups = require(script.PromptPopups)
+local UiTheming = require(script.UiTheming)
 
 -- PLUGIN SETUP
 
@@ -10,33 +11,8 @@ local levelManagerButton = toolbar:CreateButton("Level Manager", "Open the \"Lev
 
 -- UI THEME SETUP
 
-for _, v in Utils.merge(script.Parent.Gui:GetDescendants(), script.Parent.GuiTemplates:GetDescendants()) do
-    if v:IsA("GuiObject") then
-        if not v:GetAttribute("Colour") then continue end
-
-        local colourName = v:GetAttribute("Colour")
-        if not colourName then continue end
-        local colour = Enum.StudioStyleGuideColor:FromName(colourName)
-
-        local modifierName = v:GetAttribute("Colour")
-        local modifier
-        if modifierName and Enum.StudioStyleGuideModifier:FromName(modifierName) then 
-            modifier = Enum.StudioStyleGuideModifier:FromName(modifierName)
-        end
-        
-        v.BackgroundColor3 = settings().Studio.Theme:GetColor(colour, modifier)
-        
-        local borderColourName = v:GetAttribute("BorderColour")
-        if borderColourName and Enum.StudioStyleGuideColor:FromName(borderColourName) then
-            local colourEnum = Enum.StudioStyleGuideColor:FromName(borderColourName)
-            v.BorderColor3 = settings().Studio.Theme:GetColor(colourEnum)
-        end
-        
-        if Utils.HasProperty(v, "TextColor3") then
-            v.TextColor3 = settings().Studio.Theme:GetColor(Enum.StudioStyleGuideColor.MainText)
-        end
-    end
-end
+UiTheming.UpdateAllUiColours()
+settings().Studio.ThemeChanged:Connect(UiTheming.UpdateAllUiColours)
 
 -- WIDGET SETUP
 
@@ -98,4 +74,5 @@ end)
 
 -- SETUP FUNCTIONALITY STUFF
 
-LevelManager.Init(levelManagerGui)
+LevelManager.Init(plugin, levelManagerGui)
+PromptPopups.Init(plugin)
