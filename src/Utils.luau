@@ -57,6 +57,13 @@ function Utils.HasProperty(value: Instance, propertyName: string): boolean
 	return success
 end
 
+function Utils.GroupToModel(v: Instance): Model
+	local model = Instance.new("Model")
+	model.Parent = v.Parent
+	v.Parent = model
+	return model
+end
+
 
 
 -- VECTOR UTILS
@@ -196,6 +203,16 @@ function Utils.CopyParams(params: RaycastParams | OverlapParams)
 	newParams.FilterType = params.FilterType
 	newParams.RespectCanCollide = params.RespectCanCollide
 	return newParams :: typeof(params)
+end
+
+function Utils.FocusCamera(object: Instance)
+	local cam = workspace.CurrentCamera
+	local copy = object:Clone()
+    local group = Utils.GroupToModel(copy)
+    local cf, size = group:GetBoundingBox()
+    local dist = Utils.average(size) * 2
+    cam.CFrame = (cam.CFrame.Rotation * CFrame.new(cf.Position)) - (cam.CFrame.lookVector * dist)
+	group:Destroy()
 end
 
 return Utils

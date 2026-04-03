@@ -2,26 +2,49 @@ local Utils = require(script.Parent.Parent.Utils)
 
 local UiTheming = {}
 
+UiTheming.CustomStyleGuideColour = {
+    Red = {
+        Dark = Color3.fromRGB(85, 0, 0),
+        Light = Color3.fromRGB(255, 85, 85)
+    },
+    Green = {
+        Dark = Color3.fromRGB(0, 85, 0),
+        Light = Color3.fromRGB(85, 255, 85)
+    }
+}
+
+local function getColour(colourName: string, modifierName: string?): Color3?
+    if not colourName then return end
+
+    local colourEnum = Enum.StudioStyleGuideColor:FromName(colourName)
+
+    if not colourEnum then
+        if UiTheming.CustomStyleGuideColour[colourName] then
+            return UiTheming.CustomStyleGuideColour[colourName][settings().Studio.Theme.Name]
+        else
+            return
+        end
+    end
+
+    local modifier
+    if modifierName then
+        modifier = Enum.StudioStyleGuideModifier:FromName(modifierName)
+    end
+
+    return settings().Studio.Theme:GetColor(colourEnum, modifier)
+end
+
 function UiTheming.UpdateUiColour(UiElement)
     if not UiElement:IsA("GuiObject") then return end
-    if UiElement:GetAttribute("Colour") then
-        local colourName = UiElement:GetAttribute("Colour")
-        if not colourName then return end
-        local colour = Enum.StudioStyleGuideColor:FromName(colourName)
 
-        local modifierName = UiElement:GetAttribute("Modifier")
-        local modifier
-        if modifierName and Enum.StudioStyleGuideModifier:FromName(modifierName) then
-            modifier = Enum.StudioStyleGuideModifier:FromName(modifierName)
-        end
-        
-        UiElement.BackgroundColor3 = settings().Studio.Theme:GetColor(colour, modifier)
+    local colour = getColour(UiElement:GetAttribute("Colour"), UiElement:GetAttribute("Modifier"))
+    if colour then
+        UiElement.BackgroundColor3 = colour
     end
     
-    local borderColourName = UiElement:GetAttribute("BorderColour")
-    if borderColourName and Enum.StudioStyleGuideColor:FromName(borderColourName) then
-        local colourEnum = Enum.StudioStyleGuideColor:FromName(borderColourName)
-        UiElement.BorderColor3 = settings().Studio.Theme:GetColor(colourEnum)
+    local borderColour = getColour(UiElement:GetAttribute("BorderColour"))
+    if borderColour then
+        UiElement.BorderColor3 = borderColour
     end
     
     if Utils.HasProperty(UiElement, "TextColor3") then
@@ -32,8 +55,9 @@ function UiTheming.UpdateUiColour(UiElement)
     end
 end
 
-function UiTheming.UpdateAllUiColours()
-    for _, v in Utils.merge(script.Parent.Parent.Gui:GetDescendants()) do
+function UiTheming.UpdateDescendantsUiColours(UiElement: GuiObject)
+    UiTheming.UpdateUiColour(UiElement)
+    for _, v in UiElement:GetDescendants() do
         UiTheming.UpdateUiColour(v)
     end
 end

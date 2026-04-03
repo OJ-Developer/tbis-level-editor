@@ -113,4 +113,27 @@ function PromptPopups.PromptYesNo(messageText: string, widgetTitle: string, repl
     end
 end
 
+function PromptPopups.MessagePopup(message: string, widgetTitle: string)
+    local widget = plugin:CreateDockWidgetPluginGuiAsync(HttpService:GenerateGUID(false), DEFAULT_WIDGET_INFO)
+
+    local ui = script.Parent.Parent.Gui.Message:Clone()
+    ui.Parent = widget
+    widget.Title = widgetTitle
+    widget.Enabled = true
+    ui.Message.Text = message
+    
+    task.spawn(function()
+        local closed = false
+        repeat
+            local property = widget.Changed:Wait()
+            if property == "Enabled" and not widget.Enabled then
+                closed = true
+            end
+        until closed
+
+        widget:Destroy()
+        ui:Destroy()
+    end)
+end
+
 return PromptPopups

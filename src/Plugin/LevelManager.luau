@@ -1,5 +1,6 @@
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Selection = game:GetService("Selection")
 local PromptPopups = require(script.Parent.PromptPopups)
 local UiTheming = require(script.Parent.UiTheming)
 
@@ -23,6 +24,10 @@ function LevelManager.Init(p, levelManagerGui)
         levelsFolder.Parent = ReplicatedStorage
     end
 
+    if not workspace:FindFirstChild("EditingLevel") then
+        Instance.new("Folder", workspace).Name = "EditingLevel"
+    end
+
     -- assigning variables
     gui = levelManagerGui
     templateLevelOption = gui.TemplateLevelOption
@@ -32,6 +37,8 @@ function LevelManager.Init(p, levelManagerGui)
     gui.Options.RenameLevel.MouseButton1Down:Connect(onRenameLevelClicked)
     gui.Options.DuplicateLevel.MouseButton1Down:Connect(onDuplicateLevelClicked)
     gui.Options.DeleteLevel.MouseButton1Down:Connect(onDeleteLevelClicked)
+    gui.Options.LoadLevel.MouseButton1Down:Connect(onLoadLevelClicked)
+    gui.Options.SaveLevel.MouseButton1Down:Connect(onSaveLevelClicked)
 
     LevelManager.UpdateLevelList()
 
@@ -93,21 +100,27 @@ end
 
 -- NEW LEVELS
 function onNewLevelClicked()
-    local newLevelName, cancelled = PromptPopups.PromptForText("Please name your new level.", "Name your level", "Level name")
+    local newLevelName, cancelled = PromptPopups.PromptForText(
+        "Please name your new level.", 
+        "Name your level", 
+        "Level name"
+    )
     if cancelled then return end
     LevelManager.NewLevel(newLevelName)
 end
 
 function LevelManager.NewLevel(name: string)
     if doesLevelExist(name) then
-        warn("New level can not be created. A level with the same name already exists")
+        PromptPopups.MessagePopup("New level can not be created. A level with the same name already exists", "Can't create level")
         return
     end
 
     ChangeHistoryService:SetWaypoint("NewLevel")
 
-    local newLevel = Instance.new("Folder", levelsFolder)
+    local newLevel = script.Parent.Parent.TemplateLevel:Clone()
     newLevel.Name = name
+    newLevel.Parent = levelsFolder
+
     LevelManager.UpdateLevelList(name)
 
     ChangeHistoryService:SetWaypoint("NewLevel")
@@ -117,7 +130,10 @@ end
 function onRenameLevelClicked()
     if not selectedLevel then return end
 
-    local newLevelName, cancelled = PromptPopups.PromptForText(`Please make a new name for {selectedLevel}.`, "Rename your level", "Level name")
+    local newLevelName, cancelled = PromptPopups.PromptForText(
+        `Please make a new name for {selectedLevel}.`, 
+        "Rename your level", "Level name"
+    )
     if cancelled then return end
 
     LevelManager.RenameLevel(selectedLevel, newLevelName)
@@ -125,7 +141,7 @@ end
 
 function LevelManager.RenameLevel(levelName: string, newName: string)
     if doesLevelExist(newName) then
-        warn("Level can not be renamed. A level with the same name already exists.")
+        PromptPopups.MessagePopup("Level can not be renamed. A level with the same name already exists.", "Can't rename level")
         return
     end
 
@@ -139,6 +155,10 @@ function LevelManager.RenameLevel(levelName: string, newName: string)
 
     level.Name = newName
     LevelManager.UpdateLevelList(newName)
+
+    if workspace.EditingLevel:GetAttribute("Level") == levelName then
+        workspace.EditingLevel:SetAttribute("Level", newName)
+    end
 
     ChangeHistoryService:SetWaypoint("RenameLevel")
 end
@@ -186,7 +206,10 @@ end
 function onDeleteLevelClicked()
     if not selectedLevel then return end
 
-    local doDelete, cancelled = PromptPopups.PromptYesNo(`Are you sure you want to delete the level "{selectedLevel}"? This cannot be undone!`, "Delete confirmation")
+    local doDelete, cancelled = PromptPopups.PromptYesNo(
+        `Are you sure you want to delete the level "{selectedLevel}"? This cannot be undone!`, 
+        "Delete confirmation"
+    )
     if cancelled then return end
     if not doDelete then return end
 
@@ -202,6 +225,82 @@ function LevelManager.DeleteLevel(levelName: string)
     LevelManager.UpdateLevelList()
 
     ChangeHistoryService:SetWaypoint("DeleteLevel")
+end
+
+-- LEVEL LOADING
+function onLoadLevelClicked()
+    if not selectedLevel then return end
+
+    if workspace.EditingLevel:GetAttribute("Level") then
+        local doLoad, cancelled = PromptPopups.PromptYesNo(
+            "Are you sure you want to load this level? Any unsaved changes to the currently loaded level will be deleted!",
+            "Load Level Confirmation"
+        )
+
+        if cancelled then return end
+        if not doLoad then return end
+    end
+
+    LevelManager.LoadLevel(selectedLevel)
+end
+
+function LevelManager.LoadLevel(levelName: string)
+    local level = levelsFolder:FindFirstChild(levelName)
+    if not level then return end
+
+    ChangeHistoryService:SetWaypoint("LoadLevel")
+
+    local prevEditingLevel = workspace.EditingLevel
+    local loadedLevel = level:Clone()
+    loadedLevel.Name = "EditingLevel"
+    loadedLevel.Parent = workspace
+    loadedLevel:SetAttribute("Level", levelName)
+    prevEditingLevel:Destroy()
+
+    -- focus camera on new level
+    --Utils.FocusCamera(loadedLevel)
+    Selection:Set({loadedLevel})
+
+    ChangeHistoryService:SetWaypoint("LoadLevel")
+end
+
+-- LEVEL SAVING
+function onSaveLevelClicked()
+    if not workspace.EditingLevel:GetAttribute("Level") then
+        warn("Cannot save level. No level is loaded.")
+        return
+    end
+    
+    if selectedLevel then
+        if workspace.EditingLevel:GetAttribute("Level") ~= selectedLevel then
+            local doSave, cancelled = PromptPopups.PromptYesNo(
+                `Are you sure you want to override the level "{selectedLevel}"? This cannot be undone!`,
+                "Save level confirmation"
+            )
+
+            if cancelled then return end
+            if not doSave then return end
+        end
+
+        LevelManager.SaveLevel(selectedLevel)
+    else
+        LevelManager.SaveLevel(workspace.EditingLevel:GetAttribute("Level"))
+    end
+end
+
+function LevelManager.SaveLevel(saveToLevelName: string)
+    local saveToLevel = levelsFolder:FindFirstChild(saveToLevelName)
+    if not saveToLevel then return end
+
+    ChangeHistoryService:SetWaypoint("SaveLevel")
+
+    saveToLevel:Destroy()
+
+    local savedLevel = workspace.EditingLevel:Clone()
+    savedLevel.Name = saveToLevelName
+    savedLevel.Parent = levelsFolder
+    
+    ChangeHistoryService:SetWaypoint("SaveLevel")
 end
 
 return LevelManager
