@@ -1,6 +1,10 @@
+local RunService = game:GetService("RunService")
+local InsertObjects = require(script.InsertObjects)
 local LevelManager = require(script.LevelManager)
 local PromptPopups = require(script.PromptPopups)
 local UiTheming = require(script.UiTheming)
+
+if RunService:IsRunning() then return end
 
 PromptPopups.Init(plugin)
 
@@ -85,9 +89,23 @@ local function main()
     -- SETUP FUNCTIONALITY STUFF
 
     LevelManager.Init(plugin, levelManagerGui)
+    InsertObjects.Init(plugin, insertObjectsGui)
 
     workspace:SetAttribute("tbisleveleditor", true)
 
+    -- DELETE EDITING LEVEL FOLDER WHEN PLAYING
+
+    if workspace:FindFirstChild("DeleteEditingLevel") then return end
+
+    local deleteEditingLevel = Instance.new("Script")
+    deleteEditingLevel.Name = "DeleteEditingLevel"
+    deleteEditingLevel.Source = [[
+-- deletes the "EditingLevel" folder when the game is played
+if workspace:FindFirstChild("EditingLevel") then
+    workspace.EditingLevel:Destroy()
+end
+script:Destroy()]]
+    deleteEditingLevel.Parent = workspace
 end
 
 -- INITIALIZATION

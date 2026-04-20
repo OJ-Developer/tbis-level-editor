@@ -1,12 +1,13 @@
 local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local Selection = game:GetService("Selection")
+local Config = require(script.Parent.Parent.Config)
 local PromptPopups = require(script.Parent.PromptPopups)
 local UiTheming = require(script.Parent.UiTheming)
 
 local LevelManager = {}
 
---local plugin
+local plugin
 
 local levelsFolder
 local gui: typeof(script.Parent.Parent.Gui.LevelManager)
@@ -14,7 +15,7 @@ local templateLevelOption: typeof(gui.TemplateLevelOption)
 local selectedLevel: string?
 
 function LevelManager.Init(p, levelManagerGui)
-    --plugin = p
+    plugin = p
 
     -- creates new levels folder if it doesn't already exist
     levelsFolder = ReplicatedStorage:FindFirstChild("Levels")
@@ -33,12 +34,13 @@ function LevelManager.Init(p, levelManagerGui)
     templateLevelOption = gui.TemplateLevelOption
 
     -- options functionality
-    gui.Options.NewLevel.MouseButton1Down:Connect(onNewLevelClicked)
-    gui.Options.RenameLevel.MouseButton1Down:Connect(onRenameLevelClicked)
-    gui.Options.DuplicateLevel.MouseButton1Down:Connect(onDuplicateLevelClicked)
-    gui.Options.DeleteLevel.MouseButton1Down:Connect(onDeleteLevelClicked)
-    gui.Options.LoadLevel.MouseButton1Down:Connect(onLoadLevelClicked)
-    gui.Options.SaveLevel.MouseButton1Down:Connect(onSaveLevelClicked)
+    gui.Options.NewLevel.MouseButton1Down:Connect(onNewLevelPressed)
+    gui.Options.RenameLevel.MouseButton1Down:Connect(onRenameLevelPressed)
+    gui.Options.DuplicateLevel.MouseButton1Down:Connect(onDuplicateLevelPressed)
+    gui.Options.DeleteLevel.MouseButton1Down:Connect(onDeleteLevelPressed)
+    gui.Options.LoadLevel.MouseButton1Down:Connect(onLoadLevelPressed)
+    gui.Options.SaveLevel.MouseButton1Down:Connect(onSaveLevelPressed)
+    gui.Options.UnloadLevel.MouseButton1Down:Connect(onUnloadLevelPressed)
 
     LevelManager.UpdateLevelList()
 
@@ -99,7 +101,7 @@ function LevelManager.UpdateLevelList(newSelectedLevel: string?)
 end
 
 -- NEW LEVELS
-function onNewLevelClicked()
+function onNewLevelPressed()
     local newLevelName, cancelled = PromptPopups.PromptForText(
         "Please name your new level.", 
         "Name your level", 
@@ -127,7 +129,7 @@ function LevelManager.NewLevel(name: string)
 end
 
 -- RENAMING LEVELS
-function onRenameLevelClicked()
+function onRenameLevelPressed()
     if not selectedLevel then return end
 
     local newLevelName, cancelled = PromptPopups.PromptForText(
@@ -164,7 +166,7 @@ function LevelManager.RenameLevel(levelName: string, newName: string)
 end
 
 -- DUPLICATING LEVELS
-function onDuplicateLevelClicked()
+function onDuplicateLevelPressed()
     if not selectedLevel then return end
     LevelManager.DuplicateLevel(selectedLevel)
 end
@@ -203,7 +205,7 @@ function LevelManager.DuplicateLevel(levelName: string)
 end
 
 -- DELETING LEVELS
-function onDeleteLevelClicked()
+function onDeleteLevelPressed()
     if not selectedLevel then return end
 
     local doDelete, cancelled = PromptPopups.PromptYesNo(
@@ -228,7 +230,7 @@ function LevelManager.DeleteLevel(levelName: string)
 end
 
 -- LEVEL LOADING
-function onLoadLevelClicked()
+function onLoadLevelPressed()
     if not selectedLevel then return end
 
     if workspace.EditingLevel:GetAttribute("Level") then
@@ -265,7 +267,7 @@ function LevelManager.LoadLevel(levelName: string)
 end
 
 -- LEVEL SAVING
-function onSaveLevelClicked()
+function onSaveLevelPressed()
     if not workspace.EditingLevel:GetAttribute("Level") then
         warn("Cannot save level. No level is loaded.")
         return
@@ -288,6 +290,7 @@ function onSaveLevelClicked()
     end
 end
 
+
 function LevelManager.SaveLevel(saveToLevelName: string)
     local saveToLevel = levelsFolder:FindFirstChild(saveToLevelName)
     if not saveToLevel then return end
@@ -301,6 +304,32 @@ function LevelManager.SaveLevel(saveToLevelName: string)
     savedLevel.Parent = levelsFolder
     
     ChangeHistoryService:SetWaypoint("SaveLevel")
+
+    if not Config.SaveLevelsAsFile then return end
+
+    Selection:Set({savedLevel})
+    plugin:PromptSaveSelectionAsync(savedLevel.Name)
+end
+
+-- UNLOADING LEVELS
+
+function onUnloadLevelPressed()
+    if not workspace.EditingLevel:GetAttribute("Level") then return end
+
+    local doUnload, cancelled = PromptPopups.PromptYesNo(
+        "Are you sure you want to unload the loaded level? Any unsaved changes to the currently loaded level will be deleted!",
+        "Unload level confirmation"
+    )
+
+    if cancelled then return end
+    if not doUnload then return end
+
+    ChangeHistoryService:SetWaypoint("UnloadLevel")
+
+    workspace.EditingLevel:ClearAllChildren()
+    workspace.EditingLevel:SetAttribute("Level", nil)
+
+    ChangeHistoryService:SetWaypoint("UnloadLevel")
 end
 
 return LevelManager
