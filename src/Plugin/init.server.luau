@@ -25,7 +25,7 @@ local function main()
     local MIN_WIDGET_HEIGHT = 300
 
     local insertObjectsWidget = plugin:CreateDockWidgetPluginGuiAsync("tbis insert objects", DockWidgetPluginGuiInfo.new(
-        Enum.InitialDockState.Right,
+        Enum.InitialDockState.Left,
         false,
         false,
         DEFAULT_WIDGET_WIDTH,
@@ -36,7 +36,7 @@ local function main()
     insertObjectsWidget.Title = "TBIS Level Editor - Insert Objects"
 
     local propertiesWidget = plugin:CreateDockWidgetPluginGuiAsync("tbis properties", DockWidgetPluginGuiInfo.new(
-        Enum.InitialDockState.Right,
+        Enum.InitialDockState.Left,
         false,
         false,
         DEFAULT_WIDGET_WIDTH,

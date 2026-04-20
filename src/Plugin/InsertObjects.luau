@@ -106,7 +106,7 @@ function InsertObjects.InsertObject(object: BasePart | Model)
 
         boundingBox:Destroy()
 
-        newObject.PivotTo(CFrame.new(Utils.roundVector(newObject.WorldPivot.Position)))
+        newObject:PivotTo(CFrame.new(Utils.roundVector(newObject.WorldPivot.Position)) * newObject.WorldPivot.Rotation)
     end
     
     -- select the object
