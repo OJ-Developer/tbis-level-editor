@@ -1,4 +1,6 @@
+local ChangeHistoryService = game:GetService("ChangeHistoryService")
 local Selection = game:GetService("Selection")
+local Utils = require(script.Parent.Parent.Utils)
 
 --local plugin
 
@@ -59,6 +61,8 @@ function InsertObjects.InsertObject(object: BasePart | Model)
         return
     end
 
+    ChangeHistoryService:SetWaypoint("InsertObject")
+
     -- create new object and parent it to the correct place
     local newObject = object:Clone()
     local parent = object:GetAttribute("Parent")
@@ -69,39 +73,46 @@ function InsertObjects.InsertObject(object: BasePart | Model)
     end
 
     -- position object
-    if object:IsA("BasePart") then
-        object.Position = workspace.CurrentCamera.CFrame.Position
+    if newObject:IsA("BasePart") then
+        newObject.Position = workspace.CurrentCamera.CFrame.Position
 
         local target = workspace.CurrentCamera.CFrame.lookVector * 20
-        local shapecast = workspace:Shapecast(object, target)
+        local shapecast = workspace:Shapecast(newObject, target)
         if shapecast then
-            object.Position = workspace.CurrentCamera.CFrame.Position + workspace.CurrentCamera.CFrame.lookVector * shapecast.Distance
+            newObject.Position = workspace.CurrentCamera.CFrame.Position + workspace.CurrentCamera.CFrame.lookVector * shapecast.Distance
         else
-            object.Position = target
+            newObject.Position = target
         end
-    else
-        object:PivotTo(CFrame.new(workspace.CurrentCamera.CFrame.Position))
 
-        local cframe, size = object:GetBoundingBox()
+        newObject.Position = Utils.roundVector(newObject.Position)
+    elseif newObject:IsA("Model") then
+        newObject:PivotTo(CFrame.new(workspace.CurrentCamera.CFrame.Position))
+
+        local cframe, size = newObject:GetBoundingBox()
         local boundingBox = Instance.new("Part")
         boundingBox.Anchored = true
         boundingBox.Parent = workspace
         boundingBox.CFrame = cframe
         boundingBox.Size = size
+        boundingBox.Position = workspace.CurrentCamera.CFrame.Position
 
         local target = workspace.CurrentCamera.CFrame.lookVector * 20
         local shapecast = workspace:Shapecast(boundingBox, target)
         if shapecast then
-            object:PivotTo(CFrame.new(workspace.CurrentCamera.CFrame.Position + workspace.CurrentCamera.CFrame.lookVector * shapecast.Distance))
+            newObject:PivotTo(CFrame.new(workspace.CurrentCamera.CFrame.Position + workspace.CurrentCamera.CFrame.lookVector * shapecast.Distance))
         else
-            object:PivotTo(CFrame.new(target))
+            newObject:PivotTo(CFrame.new(target))
         end
 
         boundingBox:Destroy()
-    end
 
+        newObject.PivotTo(CFrame.new(Utils.roundVector(newObject.WorldPivot.Position)))
+    end
+    
     -- select the object
-    Selection:Set({object})
+    Selection:Set({newObject})
+
+    ChangeHistoryService:SetWaypoint("InsertObject")
 end
 
 return InsertObjects
