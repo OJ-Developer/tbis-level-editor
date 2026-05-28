@@ -81,7 +81,7 @@ function InsertObjects.InsertObject(object: BasePart | Model)
         if shapecast then
             newObject.Position = workspace.CurrentCamera.CFrame.Position + workspace.CurrentCamera.CFrame.lookVector * shapecast.Distance
         else
-            newObject.Position = target
+            newObject.Position = target + workspace.CurrentCamera.CFrame.Position
         end
 
         newObject.Position = Utils.roundVector(newObject.Position)
@@ -101,7 +101,7 @@ function InsertObjects.InsertObject(object: BasePart | Model)
         if shapecast then
             newObject:PivotTo(CFrame.new(workspace.CurrentCamera.CFrame.Position + workspace.CurrentCamera.CFrame.lookVector * shapecast.Distance))
         else
-            newObject:PivotTo(CFrame.new(target))
+            newObject:PivotTo(CFrame.new(target + workspace.CurrentCamera.CFrame.Position))
         end
 
         boundingBox:Destroy()

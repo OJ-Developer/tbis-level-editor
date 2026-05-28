@@ -1,3 +1,3 @@
 return {
-    SaveLevelsAsFile = true;
+    SaveLevelsAsFile = false;
 }
